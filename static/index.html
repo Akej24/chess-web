@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stockfish FEN viewer</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --card: #ffffff; --text: #1f2328; --muted: #6a7078;
+    --accent: #2f7d4f; --border: #dcdad4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161a17; --card: #1f2421; --text: #e8ebe9; --muted: #9aa39d;
+      --accent: #6fcf97; --border: #323a35;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px; background: var(--bg); color: var(--text);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  h1 { font-size: 1.25rem; margin: 0 0 4px; text-align: center; }
+  .status { text-align: center; color: var(--muted); margin: 0 0 20px; min-height: 1.5em; }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; }
+  .boards {
+    display: flex; flex-wrap: wrap; gap: 24px; justify-content: center;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .card {
+    flex: 1 1 320px; max-width: 520px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+  }
+  .card h2 { font-size: 1rem; margin: 0 0 12px; }
+  .board svg { display: block; width: 100%; height: auto; }
+  .fen {
+    margin-top: 12px; color: var(--muted); word-break: break-all;
+    font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace;
+  }
+  .move { color: var(--accent); }
+</style>
+</head>
+<body>
+  <h1>Stockfish FEN viewer</h1>
+  <p class="status" id="status">Waiting for a FEN &mdash; send one to <code>/api/fen</code>.</p>
+  <div class="boards" id="boards" hidden>
+    <section class="card">
+      <h2>Suggested move: <span class="move" id="move-san"></span></h2>
+      <div class="board" id="board-current"></div>
+      <div class="fen" id="fen-current"></div>
+    </section>
+  </div>
+<script>
+  let version = -1;
+
+  function render(s) {
+    document.getElementById("boards").hidden = false;
+    // SVG is generated server-side by python-chess from a validated position.
+    document.getElementById("board-current").innerHTML = s.board_svg;
+    document.getElementById("fen-current").textContent = s.fen;
+    document.getElementById("move-san").textContent = s.san + " (" + s.uci + ")";
+    document.getElementById("status").textContent =
+      s.turn + " to move · eval " + s.eval + " (White's view)" +
+      (s.depth ? " · depth " + s.depth : "");
+  }
+
+  async function poll() {
+    try {
+      const r = await fetch("/api/state", { cache: "no-store" });
+      const s = await r.json();
+      if (s.ready && s.version !== version) {
+        version = s.version;
+        render(s);
+      }
+    } catch (e) { /* server restarting or unreachable; keep trying */ }
+  }
+
+  poll();
+  setInterval(poll, 1000);
+</script>
+</body>
+</html>
