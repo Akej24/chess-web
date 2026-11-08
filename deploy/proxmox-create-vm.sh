@@ -29,8 +29,8 @@
 #   --template-id N   id used for the template        (default: 9000)
 set -euo pipefail
 
-REPO=""
-SSH_KEY_ARG=""
+REPO="https://github.com/Akej24/chess-web"
+SSH_KEY_ARG="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBAGl31DQLf8as4e/TB/BdjImEoAaSDzb7gxWPxl/7yJ chess-web"
 BRANCH="main"
 NAME="stockfish-web"
 VMID=""
